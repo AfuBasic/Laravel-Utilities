@@ -1,0 +1,22 @@
+{
+    "name": "afubasic/laravel-utilities",
+    "description": "A personal utility library for my laravel development",
+    "autoload": {
+        "psr-4": {
+            "Afubasic\\LaravelUtilities\\": "src/"
+        }
+    },
+    "extra": {
+    "laravel": {
+      "providers": [
+        "Afubasic\\LaravelUtilities\\LaravelUtilitiesServiceProvider"
+      ]
+    },
+    "authors": [
+        {
+            "name": "Afuwape Babatunde",
+            "email": "afutunde@gmail.com"
+        }
+    ],
+    "require": {}
+}
