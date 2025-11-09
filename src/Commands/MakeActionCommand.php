@@ -82,7 +82,7 @@ class MakeActionCommand extends Command
             ];
         }
 
-        $class_name = Str::studly($segments->last());
+        $class_name = Str::studly($segments->pop());
         $namespace = $segments->map(fn ($seg) => Str::studly($seg))->implode('\\');
 
         return [
