@@ -8,86 +8,84 @@ use Illuminate\Support\Str;
 
 class MakeActionCommand extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'make:action {name}';
-    
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Create a new Action class inside app/Actions';
 
-    /**
-     * Execute the console command.
-     */
+
     public function handle()
     {
-        $name = Str::studly($this->argument('name'));
+        $name = trim($this->argument('name'));
+
+        // Parse class + namespace
+        $data = (object) $this->getNameSeparations($name);
+
         $path = app_path("Actions/{$name}.php");
 
-        if(!File::exists(app_path('Actions'))) {
-            File::makeDirectory(app_path('Actions'), 0755, true);
-        }
+        // ensure ALL parent directories exist (recursive)
+        File::ensureDirectoryExists(dirname($path));
 
-        if(File::exists($path)) {
-            $this->error("Action {$name} already exists!");
+        if (File::exists($path)) {
+            $this->error("Action {$data->class} already exists!");
             return Command::FAILURE;
         }
 
-        $data = (object) $this->getNameSeparations($name);
-        $namespace = $data->namespace ? "\\{$data->namespace}" : '';
+        $namespace = $data->namespace
+            ? "App\\Actions\\{$data->namespace}"
+            : "App\\Actions";
 
         $stub = <<<PHP
-        <?php
+<?php
 
-        namespace App\Actions{$namespace};
+namespace {$namespace};
 
-        class {$data->class}
-        {
-            public function execute()
-            {
-                //
-            }
-        }
+class {$data->class}
+{
+    public function execute()
+    {
+        //
+    }
+}
 
-        PHP;
-
+PHP;
 
         File::put($path, $stub);
 
-        $this->info("✅ Action Created: App\\Actions\\{$name}");
+        $this->info("Action Created: {$namespace}\\{$data->class}");
+
         return Command::SUCCESS;
     }
 
-    public function getNameSeparations($name): array {
 
-        //Break a string into arrays
-        $segments = collect(Str::of(trim($name))
-        ->replace("\\","/")
-        ->explode('/')
-        ->filter());
+    /**
+    * Break name into namespace + class
+    */
+    
+    protected function getNameSeparations($name): array
+    {
+        $segments = collect(
+            Str::of($name)
+                ->replace('\\', '/')
+                ->explode('/')
+                ->filter()
+        );
 
-        $length = $segments->count();
-        
-        if($length == 1) {
+        if ($segments->count() === 1) {
             return [
-                'class' => $segments[0],
-                'namespace' => ''
+                'class' => Str::studly($segments[0]),
+                'namespace' => '',
             ];
         }
 
-        $class_name = Str::studly($segments->pop());
-        $namespace = $segments->map(fn ($seg) => Str::studly($seg))->implode('\\');
+        $class = Str::studly($segments->pop());
+
+        $namespace = $segments
+            ->map(fn ($seg) => Str::studly($seg))
+            ->implode('\\');
 
         return [
-            'class' => $class_name,
-            'namespace' => $namespace
+            'class' => $class,
+            'namespace' => $namespace,
         ];
     }
 }
